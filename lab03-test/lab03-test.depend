@@ -1,0 +1,11 @@
+# depslib dependency file v1.0
+1623988769 source:c:\users\mity\desktop\поняс\lab3\histogram.cpp
+	"histogram.h"
+
+1623988482 c:\users\mity\desktop\поняс\lab3\histogram.h
+	<vector>
+
+1623989801 source:c:\users\mity\desktop\поняс\lab3\test.cpp
+	"histogram.h"
+	<cassert>
+
