@@ -141,7 +141,7 @@ int shkala(const auto &max_name, int &int_shkal, int &j)
                 }
             }
 }
-/*
+
 void
 svg_begin(double width, double height) {
     cout << "<?xml version='1.0' encoding='UTF-8'?>\n";
@@ -184,7 +184,7 @@ for (size_t bin : bins) {
     svg_end();
 
 }
-*/
+
 int main()
 {
     // ¬вод данных
@@ -223,6 +223,8 @@ int main()
     cerr << "   ";
 
     shkala(max_name, int_shkal, j);
+
+    show_histogram_svg(bins);
     }
 
     return 0;
