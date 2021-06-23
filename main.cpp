@@ -2,7 +2,8 @@
 #include <vector>
 #include "histogram.h"
 #include <curl/curl.h>
-
+#include <sstream>
+#include <string>
 
 using namespace std;
 
@@ -23,60 +24,67 @@ vector<double> input_numbers(istream& in, size_t count)
     return result;
 }
 
-Input
-read_input(istream& in)
-{
+Input read_input(istream& in, bool prompt) {
     Input data;
 
-    cerr << "Enter number count: ";
+    if (prompt) cerr << "Enter number count: ";
     size_t number_count;
     in >> number_count;
 
-    cerr << "Enter numbers: ";
+    if (prompt) cerr << "Enter numbers: ";
     data.numbers = input_numbers(in, number_count);
 
-    cerr << "Enter Bin Count: ";
-    size_t bin_count;
-    in >> bin_count;
-
+    if (prompt) cerr << "Enter bin count: ";
+    in >> data.bin_count;
 
     return data;
 }
 
-vector<size_t> make_histogram(Input)
+vector<size_t> make_histogram(Input data)
 {
-    Input data2 = read_input(cin);
-
+    const auto bin_count = data.bin_count;
+    const auto numbers = data.numbers;
     double min, max;
-
-    find_minmax(data2.numbers, min, max);
-
-    vector<size_t> bins (data2.bin_count);
-    for (double number : data2.numbers)
+    size_t number_count = numbers.size();
+    find_minmax(numbers, min, max);
+    vector<size_t> bins(bin_count);
+    double bin_size = (max - min) / bin_count;
+    for (size_t i = 0; i < number_count; i++)
     {
-        size_t bin = (size_t)((number - min) / (max - min) * data2.bin_count);
-        if (bin == data2.bin_count)
+        bool found = false;
+        for (size_t j = 0; (j < bin_count - 1) && !found; j++)
         {
-            bin--;
+            auto lo = min + j * bin_size;
+            auto hi = min + (j + 1) * bin_size;
+            if ((lo <= numbers[i]) && (numbers[i] < hi))
+            {
+                bins[j]++;
+                found = true;
+            }
         }
-        bins[bin]++;
+        if (!found)
+        {
+            bins[bin_count - 1]++;
+        }
     }
     return bins;
 }
 
-void show_histogram_text(const vector<size_t>& bins)
+int show_histogram_text(const vector<size_t>& bins)
 {
     const size_t SCREEN_WIDTH = 80;
     const size_t MAX_ASTERISK = SCREEN_WIDTH - 4 - 1;
 
-    size_t max_count = 0;
-    for (size_t count : bins)
+    size_t max_count = bins[0];
+
+    for (size_t bin : bins)
     {
-        if (count > max_count)
+        if (bin > max_count)
         {
-            max_count = count;
+            max_count = bin;
         }
     }
+
     const bool scaling_needed = max_count > MAX_ASTERISK;
 
     for (size_t bin : bins)
@@ -104,59 +112,100 @@ void show_histogram_text(const vector<size_t>& bins)
         }
         cout << '\n';
     }
-    //return max_count;
+    return max_count;
 }
-/*
-int shkala(size_t &max_name, int &int_shkal, int &j)
+
+int shkala(const int &max_name, int &int_shkal, int &j)
 {
-        int kof_shkal = max_name/int_shkal + 1;
+    int kof_shkal = max_name/int_shkal + 1;
+    cout << "   ";
+    for (j=0; j<kof_shkal; j++)
+    {
+        cout<<"|";
+        for (int z=0; z<int_shkal-1; z++)
+        {
+            cout<<"-";
+        }
+    }
 
-            for (j=0; j<kof_shkal; j++)
-            {
-                cout<<"|";
-                for (int z=0; z<int_shkal-1; z++)
-                {
-                    cout<<"-";
-                }
-            }
-
-            cout<<"|"<<endl;
-            cout<<"   ";
+    cout<<"|"<<endl;
+    cout<<"   ";
 
     int chislo_shkal=-int_shkal;
 
-            for (j=0; j<kof_shkal*int_shkal; j++)
+    for (j=0; j<kof_shkal*int_shkal; j++)
+    {
+        chislo_shkal = chislo_shkal + int_shkal;
+
+        if (chislo_shkal <= int_shkal || chislo_shkal == kof_shkal*int_shkal) //Проверка для вывода 1ого, 2ого и последнего числа под шкалой
+        {
+            cout<<chislo_shkal;
+        }
+
+        if (chislo_shkal < 10)
+        {
+            for (int z=0; z<int_shkal-1; z++)
             {
-                chislo_shkal = chislo_shkal + int_shkal;
-
-                if (chislo_shkal <= int_shkal || chislo_shkal == kof_shkal*int_shkal) //Проверка для вывода 1ого, 2ого и последнего числа под шкалой
-                {
-                    cout<<chislo_shkal;
-                }
-
-                if (chislo_shkal < 10)
-                {
-                    for (int z=0; z<int_shkal-1; z++)
-                    {
-                        cout<<" ";
-                    }
-                }
-                if ((chislo_shkal>=10)&&(chislo_shkal<100))
-                {
-                    for (int z=0; z<int_shkal; z++)
-                    {
-                        cout<<" ";
-                    }
-                }
-                if (chislo_shkal>=100)
-                {
-                    for (int z=0; z<int_shkal+1; z++)
-                    {
-                        cout<<" ";
-                    }
-                }
+                cout<<" ";
             }
+        }
+        if ((chislo_shkal>=10)&&(chislo_shkal<100))
+        {
+            for (int z=0; z<int_shkal; z++)
+            {
+                cout<<" ";
+            }
+        }
+        if (chislo_shkal>=100)
+        {
+            for (int z=0; z<int_shkal+1; z++)
+            {
+                cout<<" ";
+            }
+        }
+    }
 }
+
+size_t write_data(void* items, size_t item_size, size_t item_count, void* ctx)
+{
+
+    auto data_size = item_size * item_count;
+    stringstream* buffer = reinterpret_cast<stringstream*>(ctx);
+    buffer->write(reinterpret_cast<char*>(items), data_size);
+    return data_size;
+}
+
+Input download(const string& address)
+{
+
+    stringstream buffer;
+    char *ip;
+
+    curl_global_init(CURL_GLOBAL_ALL);
+    CURL *curl = curl_easy_init();
+
+    if(curl)
+    {
+        CURLcode res;
+        curl_easy_setopt(curl, CURLOPT_URL,  address.c_str());
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &buffer);
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data);
+        res = curl_easy_perform(curl);
+        if (res != CURLE_OK)
+        {
+            cout << address<<endl;
+            cout << curl_easy_strerror(res);
+            exit(1);
+        }
+        if((res == CURLE_OK) && !curl_easy_getinfo(curl, CURLINFO_PRIMARY_IP, &ip) && ip)
+        {
+            cerr << "IP: " <<  ip <<"\n";
+        }
+        curl_easy_cleanup(curl);
+    }
+    return read_input(buffer, false);
+}
+
 /*
 void
 svg_begin(double width, double height) {
@@ -201,52 +250,40 @@ for (size_t bin : bins) {
 
 }
 */
-int
-main(int argc, char* argv[])
+
+
+int main(int argc, char* argv[])
 {
-    if (argc > 1)
-    {
-        CURL *curl = curl_easy_init();
-        if(curl)
-        {
-            CURLcode res;
-            curl_easy_setopt(curl, CURLOPT_URL, argv[1]);
-            res = curl_easy_perform(curl);
-            curl_easy_cleanup(curl);
-        }
-        return 0;
-    }
-    curl_global_init(CURL_GLOBAL_ALL);
-    // Ввод данных
-    int int_shkal;
+
+    int int_shkal, j;
 
     cout << "Vvedite interval shkali (ot 2 do 9):";
-
     cin >> int_shkal;
 
     if (int_shkal<2 || int_shkal>9) //Проверка соответствия интервала шкалы по отношению к условию (от 2 до 9)
     {
         cout << endl << "ERROR" << endl;
     }
-
     else //Если введённый интервал соответствует условию, программа продолжает работу
     {
+        Input input;
+        if (argc > 1)
+        {
+            input = download(argv[1]);
+        }
+        else
+        {
+            input = read_input(cin, true);
+        }
 
-    const auto input = read_input(cin);
-    const auto bins = make_histogram(input);
+        const auto bins = make_histogram(input);
+        const auto max_name = show_histogram_text(bins);
 
-    show_histogram_text(bins);
+        shkala(max_name, int_shkal, j);
 
-    // Обработка данных
-
-    //size_t max_name=
-
-    //cerr << "   ";
-
-    //shkala(max_name, int_shkal, j);
-
-    //show_histogram_svg(bins);
     }
-
     return 0;
+
 }
+
+
