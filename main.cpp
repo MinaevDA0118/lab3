@@ -200,8 +200,14 @@ for (size_t bin : bins) {
 
 }
 */
-int main()
+int
+main(int argc, char* argv[])
 {
+    if (argc > 1)
+    {
+        cerr << "argv[0] = " << argv[0];
+        return 0;
+    }
     curl_global_init(CURL_GLOBAL_ALL);
     // ¬вод данных
     int int_shkal;
