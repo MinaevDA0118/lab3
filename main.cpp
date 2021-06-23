@@ -1,29 +1,60 @@
 #include <iostream>
 #include <vector>
 #include "histogram.h"
+#include <curl/curl.h>
 
 using namespace std;
 
-vector<double> input_numbers(size_t count)
+struct Input
+{
+    size_t number_count;
+    vector<double> numbers;
+    size_t bin_count;
+};
+
+vector<double> input_numbers(istream& in, size_t count)
 {
     vector<double> result(count);
-    cerr << "Enter numbers: ";
     for (size_t i = 0; i < count; i++)
     {
-        cin >> result[i];
+        in >> result[i];
     }
     return result;
 }
 
-vector<size_t> make_histogram(const vector<double> &numbers, size_t bin_count)
+Input
+read_input(istream& in)
 {
+    Input data;
+
+    cerr << "Enter number count: ";
+    size_t number_count;
+    in >> number_count;
+
+    cerr << "Enter numbers: ";
+    data.numbers = input_numbers(in, number_count);
+
+    cerr << "Enter Bin Count: ";
+    size_t bin_count;
+    in >> bin_count;
+
+
+    return data;
+}
+
+vector<size_t> make_histogram(Input)
+{
+    Input data2 = read_input(cin);
+
     double min, max;
-    find_minmax(numbers, min, max);
-    vector<size_t> bins (bin_count);
-    for (double number : numbers)
+
+    find_minmax(data2.numbers, min, max);
+
+    vector<size_t> bins (data2.bin_count);
+    for (double number : data2.numbers)
     {
-        size_t bin = (size_t)((number - min) / (max - min) * bin_count);
-        if (bin == bin_count)
+        size_t bin = (size_t)((number - min) / (max - min) * data2.bin_count);
+        if (bin == data2.bin_count)
         {
             bin--;
         }
@@ -32,7 +63,7 @@ vector<size_t> make_histogram(const vector<double> &numbers, size_t bin_count)
     return bins;
 }
 
-int show_histogram_text(const vector<double> &numbers, size_t bin_count, vector<size_t> &bins)
+void show_histogram_text(const vector<size_t>& bins)
 {
     const size_t SCREEN_WIDTH = 80;
     const size_t MAX_ASTERISK = SCREEN_WIDTH - 4 - 1;
@@ -72,10 +103,10 @@ int show_histogram_text(const vector<double> &numbers, size_t bin_count, vector<
         }
         cout << '\n';
     }
-    return max_count;
+    //return max_count;
 }
-
-int shkala(const auto &max_name, int &int_shkal, int &j)
+/*
+int shkala(size_t &max_name, int &int_shkal, int &j)
 {
         int kof_shkal = max_name/int_shkal + 1;
 
@@ -125,7 +156,7 @@ int shkala(const auto &max_name, int &int_shkal, int &j)
                 }
             }
 }
-
+/*
 void
 svg_begin(double width, double height) {
     cout << "<?xml version='1.0' encoding='UTF-8'?>\n";
@@ -168,45 +199,37 @@ for (size_t bin : bins) {
     svg_end();
 
 }
-
+*/
 int main()
 {
+    curl_global_init(CURL_GLOBAL_ALL);
     // Ввод данных
+    int int_shkal;
 
-    size_t number_count;
+    cout << "Vvedite interval shkali (ot 2 do 9):";
 
-    int int_shkal, j;
-
-    cout<<"Vvedite interval shkali (ot 2 do 9):";
-
-    cin>>int_shkal;
+    cin >> int_shkal;
 
     if (int_shkal<2 || int_shkal>9) //Проверка соответствия интервала шкалы по отношению к условию (от 2 до 9)
     {
-        cout<<endl<<"ERROR"<<endl;
+        cout << endl << "ERROR" << endl;
     }
 
     else //Если введённый интервал соответствует условию, программа продолжает работу
     {
 
-    cerr << "Enter Number Count: ";
-    cin >> number_count;
-    const auto numbers = input_numbers(number_count);
+    const auto input = read_input(cin);
+    const auto bins = make_histogram(input);
 
-
-    size_t bin_count;
-    cerr << "Enter Bin Count: ";
-    cin >> bin_count;
+    show_histogram_text(bins);
 
     // Обработка данных
 
-    vector<size_t> bins = make_histogram (numbers, bin_count);
+    //size_t max_name=
 
-    const auto max_name=show_histogram_text(numbers, bin_count, bins);
+    //cerr << "   ";
 
-    cerr << "   ";
-
-    shkala(max_name, int_shkal, j);
+    //shkala(max_name, int_shkal, j);
 
     //show_histogram_svg(bins);
     }
