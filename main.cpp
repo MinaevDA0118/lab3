@@ -4,8 +4,42 @@
 #include <curl/curl.h>
 #include <sstream>
 #include <string>
+#include <windows.h>
 
 using namespace std;
+
+string make_info_text()
+{
+    stringstream buffer;
+    DWORD WINAPI info = GetVersion();
+
+
+    DWORD mask = 0x0000ffff;
+    DWORD platform = info >> 16;
+    DWORD version = info & mask;
+
+    DWORD mask2 = 0x00ff;
+    DWORD version_major = version >> 8;
+    DWORD version_minor = version & mask2;
+
+    DWORD build;
+    if ((info & 0x10000000) == 0)
+    {
+        build = platform;
+    }
+    cout << "\n\nWindows v"<<version_minor<<"."<<version_major<<" (build "<<build <<")\n";
+
+
+    char length[MAX_COMPUTERNAME_LENGTH+1];
+    DWORD size;
+    size=sizeof(length);
+    GetComputerName(length,&size);
+
+
+    cout << "Computer name: "<<length;
+    return buffer.str();
+}
+
 
 struct Input
 {
@@ -280,6 +314,8 @@ int main(int argc, char* argv[])
         const auto max_name = show_histogram_text(bins);
 
         shkala(max_name, int_shkal, j);
+
+        make_info_text();
 
     }
     return 0;
